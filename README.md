@@ -1,5 +1,7 @@
 # sh
 
+[![ci](https://github.com/zg/sh/actions/workflows/ci.yml/badge.svg)](https://github.com/zg/sh/actions/workflows/ci.yml) [![Go Reference](https://pkg.go.dev/badge/github.com/zg/sh.svg)](https://pkg.go.dev/github.com/zg/sh) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A shell: a user interface for access to an operating system's services.
 
 Supports pipelines, redirection, `&&`/`||`/`;` lists, background jobs,
