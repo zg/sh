@@ -324,6 +324,8 @@ func (s *Shell) runPiped(ctx context.Context, p *parser.Pipeline) int {
 	}
 
 	statuses := make([]int, n)
+	// Every stage reports errors to the same stream, so serialise writes to it.
+	stderr := &syncWriter{w: s.Stderr}
 	var wg sync.WaitGroup
 	for i, c := range p.Commands {
 		wg.Add(1)
@@ -335,6 +337,7 @@ func (s *Shell) runPiped(ctx context.Context, p *parser.Pipeline) int {
 				defer pw.Close()
 			}
 			sub := s.forStage(readers[i], writers[i])
+			sub.Stderr = stderr
 			statuses[i] = sub.runSingle(ctx, c, false)
 		}(i, c)
 	}
@@ -345,6 +348,19 @@ func (s *Shell) runPiped(ctx context.Context, p *parser.Pipeline) int {
 	}
 	// A pipeline's status is its last command's, as in POSIX shells.
 	return statuses[n-1]
+}
+
+// syncWriter serialises writes so concurrent pipeline stages can share a
+// single destination, such as a bytes.Buffer, without a data race.
+type syncWriter struct {
+	mu sync.Mutex
+	w  io.Writer
+}
+
+func (s *syncWriter) Write(p []byte) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.w.Write(p)
 }
 
 // forStage returns a shallow shell sharing variables but with its own
